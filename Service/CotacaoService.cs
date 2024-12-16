@@ -1,5 +1,6 @@
 ﻿using DesafioBtInoa.Interface;
 using DesafioBtInoa.Model;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,22 +11,31 @@ using System.Threading.Tasks;
 
 namespace DesafioBtInoa.Service
 {
-    public class CotacaoService : ICotacao
+    public class CotacaoService : ICotacaoService
     {
+        public readonly IConfiguration _configuration;
+
+        public CotacaoService(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
         public async Task<decimal> ObtemCotacao(string nomeAtivo)
         {
+            var chaveApi = _configuration.GetSection("chaveApi:chaveApi").Value;
+            var urlApiBrapi = _configuration.GetSection("urlApiBrapi:urlApiBrapi").Value;
 
-            var jsonString = File.ReadAllText("appSettings.json");
-            var appSettings = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(jsonString);
-
-            // URL da API
-            string urlApi = $"https://brapi.dev/api/quote/{nomeAtivo}?token={appSettings["appSettings"]["chaveApi"]}";
+            string urlApiCompleta = $"{urlApiBrapi}{nomeAtivo}?token={chaveApi}";
 
             var httpClient = new HttpClient();
-            var response = await httpClient.GetAsync(urlApi);
+            var response = await httpClient.GetAsync(urlApiCompleta);
 
             if (!response.IsSuccessStatusCode)
-                throw new Exception($"Erro na requisição: {response.StatusCode}");
+            {
+                Console.WriteLine($"Erro na requisição: {response.StatusCode}");
+                Console.ReadLine();
+                return 0;
+            }
 
             string jsonResponse = await response.Content.ReadAsStringAsync();
             CotacaoModel cotacaoModel = JsonSerializer.Deserialize<CotacaoModel>(jsonResponse);

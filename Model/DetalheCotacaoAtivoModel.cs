@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DesafioBtInoa.Model
 {
-    public class DetalheCotacaoAtivo
+    public class DetalheCotacaoAtivoModel
     {
         public string nomeAtivo { get; set; }
         public decimal precoVenda { get; set; }

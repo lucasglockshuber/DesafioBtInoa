@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DesafioBtInoa.Interface
 {
-    public interface ICotacao
+    public interface ICotacaoService
     {
         Task<decimal> ObtemCotacao(string nomeAtivo);
     }

@@ -10,27 +10,30 @@ using System.Threading;
 using System;
 using System.Threading.Tasks;
 using AutomationEmail.Providers;
-using static Program;
 using DesafioBtInoa.Model;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace DesafioBtInoa.Service
 {
     public class EmailService : IEmailService
     {
-        private readonly EmailModel _emailConfig;
-
+        public readonly IConfiguration _configuration;
         static string[] Scopes = { GmailService.Scope.GmailSend, GmailService.Scope.GmailReadonly };
-        private GmailService _serivce;
+        private GmailService _serviceGmail;
 
+        public EmailService(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
 
-        public async Task EnviaEmailCompraVendaAtivo(DetalheCotacaoAtivo detalheCotacaoAtivo)
+        public async Task EnviaEmailCompraVendaAtivo(DetalheCotacaoAtivoModel detalheCotacaoAtivo)
         {
             //Configurações para usar Serviço Gmail
             await ConfiguracaoApiGmail();
 
             //Lê arquivo de configuração JSON
-            EmailModel emailModel = JsonSerializer.Deserialize<EmailModel>(File.ReadAllText("config.json"));
+            EmailModel emailModel = new EmailModel();
             emailModel.assunto = $"Alerta Cotação Ativo: {detalheCotacaoAtivo.nomeAtivo}";
 
             if (detalheCotacaoAtivo.precoAtual > detalheCotacaoAtivo.precoVenda)
@@ -39,8 +42,9 @@ namespace DesafioBtInoa.Service
                 emailModel.corpo = $"A cotação do ativo {detalheCotacaoAtivo.nomeAtivo} caiu para {detalheCotacaoAtivo.precoAtual}. Considere comprar!";
 
             var emailMessage = new MimeMessage();
-            emailMessage.From.Add(new MailboxAddress("Lucas Duarte Glockshuber", "lucas.glockshuber@gmail.com"));
-            emailMessage.To.Add(new MailboxAddress("", emailModel.destinatario));
+
+            emailMessage.From.Add(new MailboxAddress("Lucas Duarte Glockshuber", _configuration.GetSection("email:origem").Value.ToString()));
+            emailMessage.To.Add(new MailboxAddress("", _configuration.GetSection("email:destinatario").Value.ToString()));
             emailMessage.Subject = emailModel.assunto;
 
             var bodyBuilder = new BodyBuilder() { TextBody = emailModel.corpo };
@@ -56,7 +60,7 @@ namespace DesafioBtInoa.Service
 
             var message = new Message { Raw = rawMessage };
 
-            _serivce.Users.Messages.Send(message, "me").Execute();
+            _serviceGmail.Users.Messages.Send(message, "me").Execute();
         }
 
         public async Task ConfiguracaoApiGmail()
@@ -72,7 +76,7 @@ namespace DesafioBtInoa.Service
             if (credential.Token.IsExpired(credential.Flow.Clock))
                 credential.RefreshTokenAsync(CancellationToken.None);
 
-            _serivce = new GmailService(new BaseClientService.Initializer()
+            _serviceGmail = new GmailService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,
                 ApplicationName = "Gmail API .NET"

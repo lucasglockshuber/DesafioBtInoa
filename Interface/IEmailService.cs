@@ -5,7 +5,7 @@ namespace AutomationEmail.Providers
 {
     public interface IEmailService
     {
-        Task EnviaEmailCompraVendaAtivo(DetalheCotacaoAtivo detalheCotacaoAtivo);
+        Task EnviaEmailCompraVendaAtivo(DetalheCotacaoAtivoModel detalheCotacaoAtivo);
         Task ConfiguracaoApiGmail();
     }
 }
